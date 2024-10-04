@@ -65,6 +65,11 @@ class Card{
     }
 }
 
+let initialCards = [];
+const suits = ["ouros", "espadas", "copas", "paus"];
+const numbers = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const towerN = [1, 2, 3, 4, 5, 6, 7];
+
 const cardSnaps = [
     new CardSnap(40, 30, "mainSetClosed"),
     new CardSnap(160, 30, "mainSetClosed"),
@@ -83,16 +88,80 @@ const cardSnaps = [
     new CardSnap(760, 200, "tower"),
 ]
 
+//FUNCOES LOGICAS
+function generateCardSet(){
+    suits.map(s => {
+        numbers.map(n => {
+            initialCards.push(new Card(n, s));
+        })
+    })
+}
+
+function shuffleSet(){
+    for(let i = initialCards.length -1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [initialCards[i], initialCards[j]] = [initialCards[j], initialCards[i]];
+    }
+}
+
+function distributeInitialSetup(){
+    for(let i = 0; i < 7; i++){
+        for(let j = 0; j < towerN[i]; j++){
+            let index = Math.floor(Math.random() * initialCards.length);
+            let randomCard = initialCards[index];
+            const snap = cardSnaps[i + 6];
+            snap.cards.push(randomCard);
+            randomCard.snap = snap;
+
+            if(j == towerN[i] - 1){
+                randomCard.flipped = true;
+            }
+
+            initialCards.splice(index, 1);
+        }
+    }
+
+    mainSetClosed().cards = initialCards;
+}
+
+function start(){
+    generateCardSet();
+    shuffleSet();
+    distributeInitialSetup();
+}
+
+//FUNCOES UTILITARIAS
+function mainSetOpened(){
+    return cardSnaps.find(s => s.type == "mainSetOpened");
+}
+
+function mainSetClosed(){
+    return cardSnaps.find(s => s.type == "mainSetClosed");
+}
+
+//FUNCOES DE DESENHO
 function drawCard(){
     cardSnaps.map(s => {
         ctx.strokeStyle = "black";
         ctx.beginPath();
         ctx.roundRect(s.x, s.y, 100, 150, 4);
         ctx.stroke();
+        switch(s.type){
+            case "mount":
+            case "mainSetClosed":
+            case "mainSetOpened":
+                s.cards.map(c => {
+                    c.drawCard(s.x, s.y);
+                })
+                break;
+            case "tower":
+                s.cards.map((c, i) => {
+                    c.drawCard(s.x, s.y + (i * 20));
+                })
+                break;
+        }
     })
 }
 
-// let card = new Card("A","paus");
-// card.drawCard(10, 10);
-
+start();
 drawCard();
